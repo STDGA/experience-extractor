@@ -78,12 +78,17 @@ namespace ExperienceExtractor.MongoDb
                 .AsParallel().AsOrdered()
                     .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
                     .WithDegreeOfParallelism(Math.Max(1, threads))
-                .Select(doc =>
+                .Select((RawBsonDocument doc) =>
                 {                    
                     using (doc)
                     {
-                        return (T)serializer.Deserialize(new BsonBinaryReader(new BsonBuffer(doc.Slice, false), binaryReaderSettings),
-                            typeof(T), null);
+                        using (var stream = new ByteBufferStream(doc.Slice, ownsBuffer: false))
+                        {
+                            var reader = new BsonBinaryReader(stream, binaryReaderSettings);
+                            var context = BsonDeserializationContext.CreateRoot(reader);
+
+                            return (T)serializer.Deserialize(context);
+                        }
                     }
                 });   
         }

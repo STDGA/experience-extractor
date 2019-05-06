@@ -12,8 +12,10 @@ Unless required by applicable law or agreed to in writing, software distributed 
 For information about how to get started contributing to the project, read the FAQ in the Wiki (https://github.com/Sitecore/experience-extractor/wiki/Contributor-License-Agreement-FAQ)
 
 
-About
--
+## About
+
+**Updated for Sitecore 8.2 Update 7**
+
 Experience Extractor is a community tool for exporting experience data from Sitecore to:
 
 - Analyze, present and share Sitecore data with external tools such as Excel, Power BI, R and Tableau
@@ -35,16 +37,16 @@ Experience Extractor performs the necessary queries against Sitecore’s databas
 
 Experience Extractor is exposed through a RESTful API where jobs are specified in an extensible JSON format.
 
-##Compatibility
+## Compatibility
 Experience Extractor has been tested with Sitecore XP 8.0, 8.1 and 8.2.
 
 Experience Extractor requires direct access to Mongo DB and Sitecore's item database, and is currently not compatible with Sitecore xDB Cloud Service.
 
-##Installation
+## Installation
 Download and install [the package](https://github.com/Sitecore/experience-extractor/releases) on the server(s) where Experience Extractor will be available. 
 To verify the installation succeeded open the URL /sitecore/admin/experienceextractor/shell.aspx
 
-###xDB connection string
+### xDB connection string
 The connection string Experience Extractor uses to query MongoDB must be added to `App_Config/ConnectionString.config` before data can be extracted. The default name is "experienceextractor".
 
 In a test environment the connection string can simply be the same as “analytics”, but in a production environment Experience Extractor should not read data from the primary instances in a MongoDB cluster since this may degrade the performance of Sitecore's operational data store. 
