@@ -45,18 +45,18 @@ namespace ExperienceExtractor.MongoDb
         }
 
 
-        public static IEnumerable<MongoCursor<TType>> Split<TType>(this MongoDbCollection collection, 
+        public static IEnumerable<MongoCursor<TType>> Split<TType>(this MongoDbCollection collection,
             IMongoQuery query,
             int splits, Action<MongoCursor<TType>> initializer = null, double sampleStart = 0,
             double sampleEnd = 1)
         {
-            var sampler = new MongoIdSampler();            
-            var width = (sampleEnd - sampleStart)/splits;
+            var sampler = new MongoIdSampler();
+            var width = (sampleEnd - sampleStart) / splits;
             for (var i = 0; i < splits; i++)
             {
                 var q = query ?? new QueryDocument();
-                var start = sampleStart + i*width;
-                var end = sampleStart + (i + 1)*width;
+                var start = sampleStart + i * width;
+                var end = sampleStart + (i + 1) * width;
                 if (start > 0 || end < 1)
                 {
                     q = Query.And(sampler.GetIdRange(start, end), q);
@@ -64,13 +64,13 @@ namespace ExperienceExtractor.MongoDb
 
                 var cursor = collection.FindAs<TType>(q);
                 if (initializer != null) initializer(cursor);
-                
+
                 yield return cursor;
-            }            
+            }
         }
 
         public static IEnumerable<T> FastSpool<T>(this MongoCursor<RawBsonDocument> cursor, int threads = 2)
-        {            
+        {
             var binaryReaderSettings = new BsonBinaryReaderSettings();
             binaryReaderSettings.MaxDocumentSize = int.MaxValue;
             var serializer = BsonSerializer.LookupSerializer(typeof(T));
@@ -79,31 +79,33 @@ namespace ExperienceExtractor.MongoDb
                     .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
                     .WithDegreeOfParallelism(Math.Max(1, threads))
                 .Select((RawBsonDocument doc) =>
-                {                    
+                {
                     using (doc)
                     {
                         using (var stream = new ByteBufferStream(doc.Slice, ownsBuffer: false))
                         {
-                            var reader = new BsonBinaryReader(stream, binaryReaderSettings);
-                            var context = BsonDeserializationContext.CreateRoot(reader);
+                            using (var reader = new BsonBinaryReader(stream, binaryReaderSettings))
+                            {
+                                var context = BsonDeserializationContext.CreateRoot(reader);
 
-                            return (T)serializer.Deserialize(context);
+                                return (T)serializer.Deserialize(context);
+                            }
                         }
                     }
-                });   
+                });
         }
 
 
         public static IEnumerable<TableData> Merge(this IEnumerable<TableData> tables, IEnumerable<TableData> otherTables)
         {
             var map = otherTables.ToDictionary(other => other.Schema.Name);
-            
+
             foreach (var table in tables)
             {
                 TableData other;
                 if (map.TryGetValue(table.Schema.Name, out other))
                 {
-                    yield return new MergedTableData(table.Schema, new[] {table, other});
+                    yield return new MergedTableData(table.Schema, new[] { table, other });
                     map.Remove(table.Schema.Name);
                 }
                 else
